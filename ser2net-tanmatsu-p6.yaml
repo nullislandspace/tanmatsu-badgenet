@@ -2,7 +2,7 @@
 ---
 
 connection: &tanmatsu-p6
-  accepter: tcp,127.0.0.1,4001
+  accepter: telnet(rfc2217),tcp,127.0.0.1,4001
   connector: serialdev,/dev/tanmatsu_p6,115200n81,local
   options:
     kickolduser: true

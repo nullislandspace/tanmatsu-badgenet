@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-echo "=== Tanmatsu ser2net + badgelinkproxy + SSH tunnel installer ==="
+echo "=== Tanmatsu rfc2217proxy + badgelinkproxy + SSH tunnel installer ==="
 echo ""
 
 # Check for root
@@ -12,9 +12,11 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# Check ser2net is installed
-if ! command -v ser2net >/dev/null 2>&1; then
-    echo "Error: ser2net is not installed. Install with: sudo apt install ser2net"
+# Check rfc2217proxy is installed (built and installed from badgefs)
+if ! command -v rfc2217proxy >/dev/null 2>&1; then
+    echo "Error: rfc2217proxy is not installed."
+    echo "Build and install it from the badgefs project:"
+    echo "  cd ~/src/badgefs && make && sudo make install"
     exit 1
 fi
 
@@ -26,18 +28,21 @@ if ! command -v badgelinkproxy >/dev/null 2>&1; then
     exit 1
 fi
 
-# Disable the default ser2net service (we use our own per-device services)
+# Disable the default ser2net service (in case it was previously used)
 echo "--- Disabling default ser2net service..."
 systemctl disable --now ser2net.service 2>/dev/null || true
+
+# Stop old ser2net-based services if running
+systemctl stop ser2net-tanmatsu-p4.service 2>/dev/null || true
+systemctl stop ser2net-tanmatsu-p6.service 2>/dev/null || true
+
+# Clean up old ser2net config files
+rm -f /etc/ser2net-tanmatsu-p4.yaml
+rm -f /etc/ser2net-tanmatsu-p6.yaml
 
 # Install udev rules
 echo "--- Installing udev rules..."
 cp "$SCRIPT_DIR/99-tanmatsu.rules" /etc/udev/rules.d/99-tanmatsu.rules
-
-# Install ser2net config files
-echo "--- Installing ser2net config files..."
-cp "$SCRIPT_DIR/ser2net-tanmatsu-p4.yaml" /etc/ser2net-tanmatsu-p4.yaml
-cp "$SCRIPT_DIR/ser2net-tanmatsu-p6.yaml" /etc/ser2net-tanmatsu-p6.yaml
 
 # Install systemd service files
 echo "--- Installing systemd service files..."
