@@ -1,0 +1,8 @@
+[Unit]
+Description=ser2net for Tanmatsu ESP32-P4
+BindsTo=dev-tanmatsu_p4.device
+After=dev-tanmatsu_p4.device
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/ser2net -n -c /etc/ser2net-tanmatsu-p4.yaml

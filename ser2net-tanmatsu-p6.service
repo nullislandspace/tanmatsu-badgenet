@@ -1,0 +1,8 @@
+[Unit]
+Description=ser2net for Tanmatsu ESP32-P6
+BindsTo=dev-tanmatsu_p6.device
+After=dev-tanmatsu_p6.device
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/ser2net -n -c /etc/ser2net-tanmatsu-p6.yaml
