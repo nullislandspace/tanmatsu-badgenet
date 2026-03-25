@@ -1,8 +1,0 @@
-[Unit]
-Description=RFC2217 proxy for Tanmatsu ESP32-P4
-BindsTo=dev-tanmatsu_p4.device
-After=dev-tanmatsu_p4.device
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/rfc2217proxy -d /dev/tanmatsu_p4 -p 4000 -b 115200

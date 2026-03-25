@@ -1,8 +1,0 @@
-%YAML 1.1
----
-
-connection: &tanmatsu-p4
-  accepter: telnet(rfc2217),tcp,127.0.0.1,4000
-  connector: serialdev,/dev/tanmatsu_p4,115200n81,local
-  options:
-    kickolduser: true

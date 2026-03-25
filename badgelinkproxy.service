@@ -1,8 +1,0 @@
-[Unit]
-Description=BadgeLink USB-to-TCP proxy for Tanmatsu
-BindsTo=dev-tanmatsu_badgelink.device
-After=dev-tanmatsu_badgelink.device
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/badgelinkproxy -p 4002

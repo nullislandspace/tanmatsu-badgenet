@@ -1,8 +1,0 @@
-[Unit]
-Description=RFC2217 proxy for Tanmatsu ESP32-P6
-BindsTo=dev-tanmatsu_p6.device
-After=dev-tanmatsu_p6.device
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/rfc2217proxy -d /dev/tanmatsu_p6 -p 4001 -b 115200
