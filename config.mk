@@ -29,8 +29,14 @@ REMOTE_HOST    = cavac.at
 #
 # The P4 keeps the same serial in BadgeLink mode (16d0:0f9a), so P4_SERIAL
 # identifies it in both modes.
+# White
 P4_SERIAL      = 30:ED:A0:E2:F4:65
 C6_SERIAL      = 10:51:DB:03:73:10
+
+# BLACK
+#P4_SERIAL      = 30:ED:A0:E2:F3:8B
+#C6_SERIAL      = CC:BA:97:E1:EC:40
+
 
 # ESP32-P4 (application processor)
 P4_PORT        = 4001
