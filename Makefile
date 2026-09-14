@@ -1,5 +1,12 @@
 include config.mk
 
+ifeq ($(strip $(DEVICES)),)
+$(error DEVICES is empty in config.mk)
+endif
+$(foreach d,$(DEVICES),\
+  $(if $($(d)_P4_SERIAL),,$(error $(d)_P4_SERIAL is not set in config.mk))\
+  $(if $($(d)_C6_SERIAL),,$(error $(d)_C6_SERIAL is not set in config.mk)))
+
 GENERATED = build/99-tanmatsu.rules \
             build/rfc2217proxy-p4@.service \
             build/rfc2217proxy-c6@.service \
@@ -30,21 +37,28 @@ build:
 #
 # Each tty starts a template instance named after the device node it
 # actually got (%k), so the service can bind to the right .device unit.
+#
+# Every device in DEVICES gets the same set of rules and therefore the same
+# services and ports; only one Tanmatsu may be connected at a time.
 build/99-tanmatsu.rules: config.mk | build
 	@echo "Generating udev rules..."
 	@echo '# Tanmatsu USB devices, identified by USB serial number (MAC address).' > $@
 	@echo '#' >> $@
-	@echo '# P4 ($(P4_SERIAL)) -> port $(P4_PORT)' >> $@
-	@echo '# C6 ($(C6_SERIAL)) -> port $(C6_PORT)' >> $@
+	@echo '# P4 -> port $(P4_PORT), C6 -> port $(C6_PORT), BadgeLink -> port $(BADGELINK_PORT)' >> $@
 	@echo '#' >> $@
 	@echo '# Both chips enumerate as $(ESP_VID):$(ESP_PID) with identical descriptors, so the' >> $@
 	@echo '# serial number is the only reliable discriminator. Each match also gets a' >> $@
 	@echo '# stable /dev symlink for manual esptool use.' >> $@
-	@echo 'ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="$(ESP_VID)", ATTRS{idProduct}=="$(ESP_PID)", ATTRS{serial}=="$(P4_SERIAL)", SYMLINK+="tanmatsu_p4", TAG+="systemd", ENV{SYSTEMD_WANTS}="rfc2217proxy-p4@%k.service"' >> $@
-	@echo 'ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="$(ESP_VID)", ATTRS{idProduct}=="$(ESP_PID)", ATTRS{serial}=="$(C6_SERIAL)", SYMLINK+="tanmatsu_c6", TAG+="systemd", ENV{SYSTEMD_WANTS}="rfc2217proxy-c6@%k.service"' >> $@
-	@echo '' >> $@
-	@echo '# Tanmatsu BadgeLink (P4 in BadgeLink mode -- same chip, same serial number)' >> $@
-	@echo 'ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="$(BADGELINK_VID)", ATTR{idProduct}=="$(BADGELINK_PID)", ATTR{serial}=="$(P4_SERIAL)", TAG+="systemd", ENV{SYSTEMD_WANTS}="badgelinkproxy.service"' >> $@
+	@echo '#' >> $@
+	@echo '# All listed devices share the same ports: connect only one at a time.' >> $@
+	@{ $(foreach d,$(DEVICES),\
+		echo ''; \
+		echo '# $(d): P4 $($(d)_P4_SERIAL), C6 $($(d)_C6_SERIAL)'; \
+		echo 'ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="$(ESP_VID)", ATTRS{idProduct}=="$(ESP_PID)", ATTRS{serial}=="$($(d)_P4_SERIAL)", SYMLINK+="tanmatsu_p4", TAG+="systemd", ENV{SYSTEMD_WANTS}="rfc2217proxy-p4@%k.service"'; \
+		echo 'ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="$(ESP_VID)", ATTRS{idProduct}=="$(ESP_PID)", ATTRS{serial}=="$($(d)_C6_SERIAL)", SYMLINK+="tanmatsu_c6", TAG+="systemd", ENV{SYSTEMD_WANTS}="rfc2217proxy-c6@%k.service"'; \
+		echo '# $(d) BadgeLink (P4 in BadgeLink mode -- same chip, same serial number)'; \
+		echo 'ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="$(BADGELINK_VID)", ATTR{idProduct}=="$(BADGELINK_PID)", ATTR{serial}=="$($(d)_P4_SERIAL)", TAG+="systemd", ENV{SYSTEMD_WANTS}="badgelinkproxy.service"'; \
+	) } >> $@
 
 # P4 service (template, instance = tty device name)
 #
@@ -157,9 +171,8 @@ install: check $(GENERATED)
 	@echo "connected/disconnected. The SSH tunnel now follows any"
 	@echo "Tanmatsu device, so it also runs when the C6 is powered down."
 	@echo ""
-	@echo "Configured serials:"
-	@echo "  P4: $(P4_SERIAL)"
-	@echo "  C6: $(C6_SERIAL)"
+	@echo "Configured devices (connect one at a time):"
+	@$(foreach d,$(DEVICES),echo "  $(d): P4 $($(d)_P4_SERIAL), C6 $($(d)_C6_SERIAL)";)
 	@echo ""
 	@echo "On the remote server ($(REMOTE_USER)@$(REMOTE_HOST)), use:"
 	@echo "  P4 serial:  rfc2217://localhost:$(P4_PORT)"

@@ -29,6 +29,24 @@ done
    mode; it keeps the same serial number in both modes. Everything else on
    `303a:1001` is the C6.
 
+   Several Tanmatsus can be configured at once. Give each one a name in
+   `DEVICES` and set its serials:
+
+```make
+DEVICES         = white black
+
+white_P4_SERIAL = 30:ED:A0:E2:F4:65
+white_C6_SERIAL = 10:51:DB:03:73:10
+
+black_P4_SERIAL = 30:ED:A0:E2:F3:8B
+black_C6_SERIAL = CC:BA:97:E1:EC:40
+```
+
+   All configured devices use the same ports and services, so you can swap
+   Tanmatsus without reinstalling. Connect only one at a time: a second one
+   would find the ports already taken, and the `/dev/tanmatsu_*` symlinks
+   would point at whichever enumerated last.
+
 3. Install the badgenet services:
 
 ```bash

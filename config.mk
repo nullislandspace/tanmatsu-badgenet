@@ -27,15 +27,19 @@ REMOTE_HOST    = cavac.at
 #       grep -qE '303a|16d0' $d/idVendor 2>/dev/null && \
 #       echo "$(cat $d/idVendor):$(cat $d/idProduct) $(cat $d/serial)"; done
 #
-# The P4 keeps the same serial in BadgeLink mode (16d0:0f9a), so P4_SERIAL
+# The P4 keeps the same serial in BadgeLink mode (16d0:0f9a), so <name>_P4_SERIAL
 # identifies it in both modes.
-# White
-P4_SERIAL      = 30:ED:A0:E2:F4:65
-C6_SERIAL      = 10:51:DB:03:73:10
+#
+# Any number of Tanmatsus can be listed in DEVICES. They all share the same
+# ports, so only one of them may be connected at a time. For each name in
+# DEVICES, define <name>_P4_SERIAL and <name>_C6_SERIAL.
+DEVICES        = white black
 
-# BLACK
-#P4_SERIAL      = 30:ED:A0:E2:F3:8B
-#C6_SERIAL      = CC:BA:97:E1:EC:40
+white_P4_SERIAL = 30:ED:A0:E2:F4:65
+white_C6_SERIAL = 10:51:DB:03:73:10
+
+black_P4_SERIAL = 30:ED:A0:E2:F3:8B
+black_C6_SERIAL = CC:BA:97:E1:EC:40
 
 
 # ESP32-P4 (application processor)
