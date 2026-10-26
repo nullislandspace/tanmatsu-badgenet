@@ -108,6 +108,27 @@ Two consequences worth knowing:
 sudo make uninstall
 ```
 
+`make uninstall` removes the udev rules and the services, then replays a
+`remove`/`add` trigger for the configured serial numbers so udev rebuilds
+the state of a plugged-in Tanmatsu from the rules that are actually left.
+Without that replay the `TAG+="systemd"` and `ENV{SYSTEMD_WANTS}` the
+BadgeLink rule added stay attached to the device and keep their
+`.device` units loaded.
+
+Note that the P4 has no `/dev/ttyACM*` of its own while it is in BadgeLink
+mode, and that has nothing to do with badgenet. BadgeLink replaces the
+P4's whole USB function set: in serial mode it exposes
+`:020200:0a0200:ffff01:` (CDC control, CDC data, vendor), in BadgeLink
+mode a single vendor-specific `:ff0000:` interface that only `libusb` can
+talk to. Check with:
+
+```bash
+udevadm info -p /sys/bus/usb/devices/1-4.3 | grep ID_USB_INTERFACES
+```
+
+So switching to BadgeLink mode makes the P4's `ttyACM` disappear and only
+the C6's remains. That is the device's own descriptor, not a leftover.
+
 ## Remote usage
 
 On the remote server, set the PORT variable and flash:

@@ -20,7 +20,10 @@ OBSOLETE_UNITS = rfc2217proxy.service \
                  rfc2217proxy-p6.service \
                  rfc2217proxy-c6.service
 
-.PHONY: all install uninstall clean check stop-all
+.PHONY: all install uninstall clean check stop-all retrigger
+
+# Every USB serial number this project's rules claim a device by.
+TRIGGER_SERIALS = $(foreach d,$(DEVICES),$($(d)_P4_SERIAL) $($(d)_C6_SERIAL))
 
 all: $(GENERATED)
 
@@ -160,10 +163,8 @@ install: check $(GENERATED)
 	install -m 644 build/tanmatsu-tunnel.service /etc/systemd/system/
 	systemctl daemon-reload
 	udevadm control --reload-rules
-	# --action=add is required: the rules match ACTION=="add", and the
-	# default trigger action is "change", which would not fire them.
-	udevadm trigger --action=add --subsystem-match=tty
-	udevadm trigger --action=add --subsystem-match=usb
+	# Re-evaluate the connected devices so they pick up the new rules.
+	$(MAKE) retrigger
 	@echo ""
 	@echo "=== badgenet installation complete ==="
 	@echo ""
@@ -193,7 +194,28 @@ uninstall:
 	rm -f /usr/local/bin/rfc2217proxy-start
 	systemctl daemon-reload
 	udevadm control --reload-rules
+	# Deleting the rules file is not enough: udev leaves a plugged-in
+	# device alone, so the state the BadgeLink rule gave it survives.
+	$(MAKE) retrigger
 	@echo "Done"
+
+retrigger:
+	# Replay remove+add for the Tanmatsu devices only, so udev rebuilds
+	# their properties and tags from the rules that are actually installed
+	# now. udevadm control --reload-rules only reloads the rule files; it
+	# leaves a plugged-in device alone, so the TAG+="systemd" and
+	# ENV{SYSTEMD_WANTS} that the BadgeLink rule gave it survive an
+	# uninstall and keep their .device units loaded. A plain "change"
+	# trigger would inherit those properties instead of dropping them.
+	@for s in $(TRIGGER_SERIALS); do \
+		udevadm trigger --action=remove --property-match=ID_SERIAL_SHORT=$$s || true; \
+	done
+	@udevadm settle --timeout=10 || true
+	@# --action=add is required: the rules match ACTION=="add", and the
+	@# default trigger action is "change", which would not fire them.
+	@udevadm trigger --action=add --subsystem-match=tty
+	@udevadm trigger --action=add --subsystem-match=usb
+	@udevadm settle --timeout=10 || true
 
 clean:
 	rm -rf build
